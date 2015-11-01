@@ -15,10 +15,19 @@
 require_once 'vendor/autoload.php';
 
 /*
+ * require retrieval stuff
+ */
+require_once(  plugin_dir_path( __FILE__ ) . 'retrieve.php');
+
+
+/*
  * get the site url for the redirect
  */
 $redirectUrl = get_site_url() . '/wp-content/plugins/ajaxIsForm/auth.php';
 
+/*
+ * secret stuff, don't look =P
+ */
 $infusionsoft = new \Infusionsoft\Infusionsoft(array(
     'clientId'     => 'bdgdbfsy6d5bk9d6h8q2aszs',
     'clientSecret' => 'hSacUV7z5j',
@@ -33,10 +42,11 @@ function create_oauth_table () {
   global $wpdb;
   global $oauth_db_version;
 
+  // set the charset collate
   $charset_collate = $wpdb->get_charset_collate();
-
+  // grab the db prefix, add the table name
   $table_name = $wpdb->prefix . "isAjaxForm";
-
+  // make that table
   $sql = "CREATE TABLE $table_name (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
     token text NOT NULL,
@@ -53,8 +63,9 @@ function create_oauth_table () {
 // initialize and add everything
 add_action( 'init', 'create_isFormsCPT' );
 add_action( 'init', 'isForms_taxonomy' );
-add_action('admin_menu', 'isForms_register_options_page');
 add_action( 'add_meta_boxes', 'infusionsoft_forms_add_meta_box' );
+add_action('admin_menu', 'isForms_register_options_page');
+
 
 // isForms CPT
 function create_isFormsCPT() {
@@ -107,9 +118,20 @@ function infusionsoft_forms_html( $post) {
 
 	<p>
 		<label for="infusionsoft_forms_which_form_would_you_like_to_use_"><?php _e( 'Which form would you like to use?', 'infusionsoft_forms' ); ?></label><br>
-		<select name="infusionsoft_forms_which_form_would_you_like_to_use_" id="infusionsoft_forms_which_form_would_you_like_to_use_">
-			<option>Form</option>
-		</select>
+    <?php
+    retrieve_token();
+    global $tokenObject;
+    global $tokenExpiration;
+    global $newToken;
+    // check the token
+    $goodToGo = check_token_expiration($tokenExpiration, $newToken);
+
+    if($goodToGo){
+      get_those_ids();
+    } else {
+      echo '<p>Please go <a href="';get_site_url(); echo '/wp-admin/options-general.php?page=isForms">authenticate your Infusionsoft app</a>, silly!</p>';
+    } ?>
+
 	</p><?php
 }
 
@@ -134,12 +156,14 @@ function isForms_settings_page(){
     <div>
     <?php screen_icon(); ?>
     <h2>IS to WP Form Settings</h2>
+
     <?php
     global $infusionsoft;
+    retrieve_token();
+    global $newToken;
 
-    if ($infusionsoft->getToken()) {
-        // Save the serialized token to the current session for subsequent requests
-        $_SESSION['token'] = serialize($infusionsoft->getToken());
+    if ($newToken) {
+        echo '<p>You are authenticated. Get to work!</p>';
     } else {
         echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
     } // end oAuth IS STUFF
