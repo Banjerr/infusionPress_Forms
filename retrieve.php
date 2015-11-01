@@ -52,14 +52,8 @@ function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusio
 // grab the web form ids from IS
 function get_those_ids(){
   global $infusionsoft;
-  var_dump($infusionsoft);
+  global $formIDS;
+  
   // get the form IDS
   $formIDS = $infusionsoft->webForms()->getMap();
-
-  // make the dropdown
-  echo '<select name="infusionsoft_forms_which_form_would_you_like_to_use_" id="infusionsoft_forms_which_form_would_you_like_to_use_">';
-  foreach($formIDS as $formID => $formName){
-    echo '<option value="'. $formID .'">'. $formName .'</option>';
-  }
-  echo '</select>';
 }

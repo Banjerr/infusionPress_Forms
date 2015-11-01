@@ -20,15 +20,15 @@ require_once 'vendor/autoload.php';
 require_once(  plugin_dir_path( __FILE__ ) . 'retrieve.php');
 
 /*
- * require secret stuff, dont look =P
- */
-require_once(  plugin_dir_path( __FILE__ ) . 'secretStuff.php');
-
-
-/*
  * get the site url for the redirect
  */
 $redirectUrl = get_site_url() . '/wp-content/plugins/ajaxIsForm/auth.php';
+
+/*
+ * require secret stuff
+ */
+require_once(  plugin_dir_path( __FILE__ ) . 'secretStuff.php');
+
 
 global $oauth_db_version;
 $oauth_db_version = '1.0';
@@ -61,6 +61,7 @@ add_action( 'init', 'create_isFormsCPT' );
 add_action( 'init', 'isForms_taxonomy' );
 add_action( 'add_meta_boxes', 'infusionsoft_forms_add_meta_box' );
 add_action('admin_menu', 'isForms_register_options_page');
+add_action('save_post', 'infusionsoft_forms_save');
 
 
 // isForms CPT
@@ -102,39 +103,67 @@ function infusionsoft_forms_add_meta_box() {
 		__( 'Infusionsoft Forms', 'infusionsoft_forms' ),
 		'infusionsoft_forms_html',
 		'isForm',
-		'advanced',
+		'normal',
 		'high'
 	);
+}
+
+function infusionsoft_forms_get_meta( $value ) {
+	global $post;
+
+	$field = get_post_meta( $post->ID, $value, true );
+	if ( ! empty( $field ) ) {
+		return is_array( $field ) ? stripslashes_deep( $field ) : stripslashes( wp_kses_decode_entities( $field ) );
+	} else {
+		return false;
+	}
 }
 
 function infusionsoft_forms_html( $post) {
 	wp_nonce_field( '_infusionsoft_forms_nonce', 'infusionsoft_forms_nonce' ); ?>
 
-	<p>Pick which IS form youd like to use</p>
+	<p>Your Infusionsoft Forms</p>
+  <?php
+  retrieve_token();
+  global $tokenObject;
+  global $tokenExpiration;
+  global $newToken;
+  global $infusionsoft;
+  global $unserializedIsToken;
+  // set the token with the unserialized token object
+  $infusionsoft->setToken($unserializedIsToken);
 
-	<p>
-		<label for="infusionsoft_forms_which_form_would_you_like_to_use_"><?php _e( 'Which form would you like to use?', 'infusionsoft_forms' ); ?></label><br>
-    <?php
-    retrieve_token();
-    global $tokenObject;
-    global $tokenExpiration;
-    global $newToken;
-    global $infusionsoft;
-    global $unserializedIsToken;
-    print_r($unserializedIsToken);
-    // set the token with the unserialized token object
-    $infusionsoft->setToken($unserializedIsToken);
-
-    // check the token
-    $goodToGo = check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft);
-
-    if($goodToGo){
+  // check the token
+  $goodToGo = check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft);
+  // if everything is kosher, lets build a dropdown
+  if($goodToGo){
       get_those_ids();
-    } else {
-      echo '<p>Please go <a href="';get_site_url(); echo '/wp-admin/options-general.php?page=isForms">authenticate your Infusionsoft app</a>, silly!</p>';
-    } ?>
+      global $formIDS;
+    ?>
+  	<p>
+  		<label for="infusionsoft_forms_which_form_would_you_like_to_use_"><?php _e( 'Which form would you like to use?', 'infusionsoft_forms' ); ?></label><br>
+  		<select name="infusionsoft_forms_which_form_would_you_like_to_use_" id="infusionsoft_forms_which_form_would_you_like_to_use_">
+        <?php
+        // loop through all the forms we retrieve from the IS API
+        foreach($formIDS as $formID => $formName){
+          // if this option was previously selected, mark it as such
+          if (infusionsoft_forms_get_meta( "infusionsoft_forms_which_form_would_you_like_to_use_" ) === "$formID" ){
+            echo '<option selected value="'. $formID .'">'. $formName .'</option>';
+          } else { // or else just echo them out
+            echo '<option value="'. $formID .'">'. $formName .'</option>';
+          }
+        }
+        ?>
+  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '1' ) ? 'selected' : '' ?>>1</option>
+  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '2' ) ? 'selected' : '' ?>>2</option>
+  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '3' ) ? 'selected' : '' ?>>3</option>
+  		</select>
+  	</p>	<p>
+  		<label for="infusionsoft_forms_form_html"><?php _e( 'Form HTML', 'infusionsoft_forms' ); ?></label><br>
+  		<textarea name="infusionsoft_forms_form_html" id="infusionsoft_forms_form_html" ><?php echo infusionsoft_forms_get_meta( 'infusionsoft_forms_form_html' ); ?></textarea>
 
-	</p><?php
+  	</p><?php
+  }
 }
 
 function infusionsoft_forms_save( $post_id ) {
@@ -144,6 +173,8 @@ function infusionsoft_forms_save( $post_id ) {
 
 	if ( isset( $_POST['infusionsoft_forms_which_form_would_you_like_to_use_'] ) )
 		update_post_meta( $post_id, 'infusionsoft_forms_which_form_would_you_like_to_use_', esc_attr( $_POST['infusionsoft_forms_which_form_would_you_like_to_use_'] ) );
+	if ( isset( $_POST['infusionsoft_forms_form_html'] ) )
+		update_post_meta( $post_id, 'infusionsoft_forms_form_html', esc_attr( $_POST['infusionsoft_forms_form_html'] ) );
 }
 
 // settings page
@@ -164,11 +195,11 @@ function isForms_settings_page(){
     retrieve_token();
     global $newToken;
 
-    if ($newToken) {
+    //if ($newToken) {
         echo '<p>You are authenticated. Get to work!</p>';
-    } else {
+    //} else {
         echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
-    } // end oAuth IS STUFF
+    //} // end oAuth IS STUFF
     ?>
     </div>
   <?php
