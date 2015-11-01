@@ -19,20 +19,16 @@ require_once 'vendor/autoload.php';
  */
 require_once(  plugin_dir_path( __FILE__ ) . 'retrieve.php');
 
+/*
+ * require secret stuff, dont look =P
+ */
+require_once(  plugin_dir_path( __FILE__ ) . 'secretStuff.php');
+
 
 /*
  * get the site url for the redirect
  */
 $redirectUrl = get_site_url() . '/wp-content/plugins/ajaxIsForm/auth.php';
-
-/*
- * secret stuff, don't look =P
- */
-$infusionsoft = new \Infusionsoft\Infusionsoft(array(
-    'clientId'     => 'bdgdbfsy6d5bk9d6h8q2aszs',
-    'clientSecret' => 'hSacUV7z5j',
-    'redirectUri'  =>  $redirectUrl
-));
 
 global $oauth_db_version;
 $oauth_db_version = '1.0';
@@ -125,6 +121,7 @@ function infusionsoft_forms_html( $post) {
     global $newToken;
     global $infusionsoft;
     global $unserializedIsToken;
+    print_r($unserializedIsToken);
     // set the token with the unserialized token object
     $infusionsoft->setToken($unserializedIsToken);
 
