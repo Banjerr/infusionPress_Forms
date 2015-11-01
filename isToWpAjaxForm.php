@@ -123,8 +123,13 @@ function infusionsoft_forms_html( $post) {
     global $tokenObject;
     global $tokenExpiration;
     global $newToken;
+    global $infusionsoft;
+    global $unserializedIsToken;
+    // set the token with the unserialized token object
+    $infusionsoft->setToken($unserializedIsToken);
+
     // check the token
-    $goodToGo = check_token_expiration($tokenExpiration, $newToken);
+    $goodToGo = check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft);
 
     if($goodToGo){
       get_those_ids();

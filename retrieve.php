@@ -4,6 +4,7 @@ function retrieve_token(){
   global $oauth_db_version;
   global $infusionsoft;
   global $tokenExpiration;
+  global $unserializedIsToken;
   global $tokenObject;
   global $newToken;
   global $wpdb;
@@ -28,17 +29,16 @@ function retrieve_token(){
 }
 
 // check expiration
-function check_token_expiration($tokenExpiration, $newToken){
-  global $infusionsoft;
-
+function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft){
   // get current time, subtract 1 hour
   $needsNewToken = time() - 60 * 60 * 1000 ;
 
   // if we need a new token, refresh it
   if($needsNewToken > $tokenExpiration){
-    echo 'you need a new friggin token';
+    echo 'you need a new friggin token <br />';
     // refresh it
-    $infusionsoft->setToken($tokenObject);
+    //$infusionsoft->setToken($unserializedIsToken->accessToken);
+    //var_dump($infusionsoft);
     $infusionsoft->refreshAccessToken();
     // update the db
 
@@ -52,7 +52,8 @@ function check_token_expiration($tokenExpiration, $newToken){
 // grab the web form ids from IS
 function get_those_ids(){
   global $infusionsoft;
-
+  var_dump($infusionsoft);
+  // get the form IDS
   $formIDS = $infusionsoft->webForms()->getMap();
 
   // make the dropdown
@@ -62,5 +63,3 @@ function get_those_ids(){
   }
   echo '</select>';
 }
-// get_those_ids();
-// die();
