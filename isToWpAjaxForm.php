@@ -62,7 +62,8 @@ add_action( 'init', 'isForms_taxonomy' );
 add_action( 'add_meta_boxes', 'infusionsoft_forms_add_meta_box' );
 add_action('admin_menu', 'isForms_register_options_page');
 add_action('save_post', 'infusionsoft_forms_save');
-
+add_action( 'admin_footer', 'ajax_formHtml' );
+add_shortcode('infusionpress-form', 'infusionpress_shortcode');
 
 // isForms CPT
 function create_isFormsCPT() {
@@ -174,7 +175,7 @@ function infusionsoft_forms_save( $post_id ) {
 	if ( isset( $_POST['infusionsoft_forms_which_form_would_you_like_to_use_'] ) )
 		update_post_meta( $post_id, 'infusionsoft_forms_which_form_would_you_like_to_use_', esc_attr( $_POST['infusionsoft_forms_which_form_would_you_like_to_use_'] ) );
 	if ( isset( $_POST['infusionsoft_forms_form_html'] ) )
-		update_post_meta( $post_id, 'infusionsoft_forms_form_html', esc_attr( $_POST['infusionsoft_forms_form_html'] ) );
+		update_post_meta( $post_id, 'infusionsoft_forms_form_html',  $_POST['infusionsoft_forms_form_html'] ) ;
 }
 
 // settings page
@@ -195,11 +196,11 @@ function isForms_settings_page(){
     retrieve_token();
     global $newToken;
 
-    //if ($newToken) {
+    if ($newToken) {
         echo '<p>You are authenticated. Get to work!</p>';
-    //} else {
+    } else {
         echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
-    //} // end oAuth IS STUFF
+    } // end oAuth IS STUFF
     ?>
     </div>
   <?php
@@ -208,6 +209,63 @@ function isForms_settings_page(){
 /*
 	Usage: infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' )
 */
+
+// AJAX function
+function ajax_formHtml() {
+  echo '
+	<script type="text/javascript" >
+	jQuery(document).ready(function($) {
+    jQuery("#infusionsoft_forms_which_form_would_you_like_to_use_").change(function(){
+      var desiredFormID = jQuery(this).attr("value");
+      var data = {
+        "action": "my_action",
+        "formID": desiredFormID
+      };
+
+  		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+  		jQuery.post(ajaxurl, data, function(response) {
+  			jQuery("#infusionsoft_forms_form_html").html(response);
+  		});
+    })
+	});
+	</script>';
+}
+
+// AJAX callback handler
+add_action( 'wp_ajax_my_action', 'my_action_callback' );
+
+function my_action_callback() {
+	global $wpdb; // this is how you get access to the database
+  retrieve_token();
+  global $infusionsoft;
+  global $unserializedIsToken;
+  // set the token with the unserialized token object
+  $infusionsoft->setToken($unserializedIsToken);
+
+  // ID of requested form
+	$desiredFormID = intval( $_POST['formID'] );
+
+  // call up that HTML
+  $desiredFormHTML = $infusionsoft->webForms()->getHTML($desiredFormID);
+
+  // find just the form, because Infusinsoft returns some silly stuff
+  $regex = '/<form (.*?)>(.*?)<\/form>/is';
+
+  preg_match_all($regex, $desiredFormHTML, $match);
+
+  // set the plain ol chosen form as a var
+  $plainChosenForm = $match[0][0];
+
+  echo $plainChosenForm;
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
+
+// shortcode for IS form
+function infusionpress_shortcode($atts){
+   $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm-->';
+   return $formCode;
+}
 
 // call the db functions
 register_activation_hook( __FILE__, 'create_oauth_table' );
