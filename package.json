@@ -1,12 +1,12 @@
 {
-  "name": "isToWpAjaxForm",
+  "name": "InfusionPress Forms",
   "version": "1.0.0",
   "description": "Simple plugin to add IS forms easily",
   "main": "isToWpAjaxForm.php",
   "author": "Ben Redden",
   "repository": {
   "type": "git",
-  "url": "https://github.com/Banjerr/isToWpAjaxForm.git"
+  "url": "https://github.com/Banjerr/infusionPress_Forms"
   },
   "license": "GPL-2.0",
   "devDependencies": {

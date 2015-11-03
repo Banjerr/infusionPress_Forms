@@ -19,6 +19,7 @@ function oauth_install_data() {
   // serialize object for db storage
   $serialToken = serialize($isToken);
 
+  // table name, with prefix
 	$table_name = $wpdb->prefix . 'isAjaxForm';
 
 	$wpdb->insert(

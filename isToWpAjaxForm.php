@@ -22,7 +22,7 @@ require_once(  plugin_dir_path( __FILE__ ) . 'retrieve.php');
 /*
  * get the site url for the redirect
  */
-$redirectUrl = get_site_url() . '/wp-content/plugins/ajaxIsForm/auth.php';
+$redirectUrl = get_site_url() . '/wp-content/plugins/infusionpress_forms/auth.php';
 
 /*
  * require secret stuff
@@ -64,6 +64,8 @@ add_action('admin_menu', 'isForms_register_options_page');
 add_action('save_post', 'infusionsoft_forms_save');
 add_action( 'admin_footer', 'ajax_formHtml' );
 add_shortcode('infusionpress-form', 'infusionpress_shortcode');
+add_action( 'wp_ajax_grab_form_html', 'grab_form_html_callback' );
+add_action( 'wp_enqueue_scripts', 'infusionpress_scripts' );
 
 // isForms CPT
 function create_isFormsCPT() {
@@ -95,7 +97,7 @@ function isForms_taxonomy() {
 
 // add it to the menu
 function isForms_register_options_page() {
-  add_options_page('IS to WP Form Settings', 'IS2WP Settings', 'manage_options', 'isForms', 'isForms_settings_page');
+  add_options_page('InfusionPress Settings', 'InfusionPress Settings', 'manage_options', 'isForms', 'isForms_settings_page');
 }
 
 function infusionsoft_forms_add_meta_box() {
@@ -131,15 +133,16 @@ function infusionsoft_forms_html( $post) {
   global $newToken;
   global $infusionsoft;
   global $unserializedIsToken;
+  global $tokenID;
   // set the token with the unserialized token object
   $infusionsoft->setToken($unserializedIsToken);
 
   // check the token
-  $goodToGo = check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft);
+  $goodToGo = check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft, $tokenID);
   // if everything is kosher, lets build a dropdown
   if($goodToGo){
-      get_those_ids();
-      global $formIDS;
+    get_those_ids();
+    global $formIDS;
     ?>
   	<p>
   		<label for="infusionsoft_forms_which_form_would_you_like_to_use_"><?php _e( 'Which form would you like to use?', 'infusionsoft_forms' ); ?></label><br>
@@ -155,15 +158,28 @@ function infusionsoft_forms_html( $post) {
           }
         }
         ?>
-  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '1' ) ? 'selected' : '' ?>>1</option>
-  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '2' ) ? 'selected' : '' ?>>2</option>
-  			<option <?php echo (infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' ) === '3' ) ? 'selected' : '' ?>>3</option>
   		</select>
-  	</p>	<p>
+  	</p>
+    <p>
   		<label for="infusionsoft_forms_form_html"><?php _e( 'Form HTML', 'infusionsoft_forms' ); ?></label><br>
-  		<textarea name="infusionsoft_forms_form_html" id="infusionsoft_forms_form_html" ><?php echo infusionsoft_forms_get_meta( 'infusionsoft_forms_form_html' ); ?></textarea>
+      <?php
+			$content = infusionsoft_forms_get_meta( 'infusionsoft_forms_form_html' );
+			$editor_id = 'infusionsoft_forms_form_html';
+			$settings = array(
+				'teeny' => true,
+				'media_buttons' => false,
+				'tinymce' => false,
+			);
 
-  	</p><?php
+			wp_editor( html_entity_decode($content), $editor_id, $settings );
+			?>
+  		<!-- <textarea name="infusionsoft_forms_form_html" id="infusionsoft_forms_form_html" ><?php echo infusionsoft_forms_get_meta( 'infusionsoft_forms_form_html' ); ?></textarea> -->
+  	</p>
+    <p>
+      <label for="infusionpress_shortcode"><?php _e( 'Infusionpress Shortcode', 'infusionsoft_forms' ); ?></label>
+      <p>This is the shortcode you will use for this form. Simply copy/paste into any page/post and you're good to go!</p>
+      <input type="text" name="infusionpress_shortcode" value="<?php echo '[infusionpress-form id=\''. $post->ID .'\']'; ?>">
+    </p><?php
   }
 }
 
@@ -196,21 +212,17 @@ function isForms_settings_page(){
     retrieve_token();
     global $newToken;
 
-    if ($newToken) {
+    //if ($newToken) {
         echo '<p>You are authenticated. Get to work!</p>';
-    } else {
+    //} else {
         echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
-    } // end oAuth IS STUFF
+    //} // end oAuth IS STUFF
     ?>
     </div>
   <?php
 }
 
-/*
-	Usage: infusionsoft_forms_get_meta( 'infusionsoft_forms_which_form_would_you_like_to_use_' )
-*/
-
-// AJAX function
+// AJAX function to make a call to grab the desired form HTML
 function ajax_formHtml() {
   echo '
 	<script type="text/javascript" >
@@ -218,27 +230,28 @@ function ajax_formHtml() {
     jQuery("#infusionsoft_forms_which_form_would_you_like_to_use_").change(function(){
       var desiredFormID = jQuery(this).attr("value");
       var data = {
-        "action": "my_action",
+        "action": "grab_form_html",
         "formID": desiredFormID
       };
 
   		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
   		jQuery.post(ajaxurl, data, function(response) {
-  			jQuery("#infusionsoft_forms_form_html").html(response);
+  			jQuery("#infusionsoft_forms_form_html").val(response);
   		});
     })
 	});
 	</script>';
 }
 
-// AJAX callback handler
-add_action( 'wp_ajax_my_action', 'my_action_callback' );
-
-function my_action_callback() {
+// AJAX callback handler that makes the call to grab the desired form HTML
+function grab_form_html_callback() {
 	global $wpdb; // this is how you get access to the database
-  retrieve_token();
   global $infusionsoft;
   global $unserializedIsToken;
+
+  // make sure the token is good or refresh it if not
+  retrieve_token();
+
   // set the token with the unserialized token object
   $infusionsoft->setToken($unserializedIsToken);
 
@@ -265,6 +278,20 @@ function my_action_callback() {
 function infusionpress_shortcode($atts){
    $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm-->';
    return $formCode;
+}
+
+// enqueue the JS/styles on the frontside
+function infusionpress_scripts() {
+	//wp_enqueue_style( 'style-name', get_stylesheet_uri() );
+  wp_enqueue_script( 'jQuery', 'https://code.jquery.com/jquery-2.1.4.min.js', array(), '2.1.4', true);
+	wp_enqueue_script( 'inf-press-functions', plugin_dir_url( __FILE__ ) . '/js/functions.js', array( 'jQuery' ), '1.0.0', true );
+
+  // Localize the script with new data
+  $wpBaseURL = plugin_dir_url( __FILE__ );
+  wp_localize_script( 'inf-press-functions', 'wpBaseURL', $wpBaseURL );
+
+  wp_enqueue_script( 'jQuery-validate', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/jquery.validate.min.js', array( 'jQuery' ), '1.14.0', true);
+  wp_enqueue_script( 'validate-additional-methods', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/additional-methods.min.js', array( 'jQuery' ), '1.14.0', true);
 }
 
 // call the db functions

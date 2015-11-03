@@ -7,13 +7,14 @@ function retrieve_token(){
   global $unserializedIsToken;
   global $tokenObject;
   global $newToken;
+  global $tokenID;
   global $wpdb;
 
   // grab the db prefix, add the table name
   $table_name = $wpdb->prefix . "isAjaxForm";
 
   // sql statement
-  $sql="SELECT expiration, token FROM `$table_name`";
+  $sql="SELECT expiration, token, id FROM `$table_name`";
 
   // run the query, set it to variables
   $tokenStuff = $wpdb->get_results($sql);
@@ -22,6 +23,8 @@ function retrieve_token(){
   $tokenExpiration = $tokenStuff[0]->expiration;
   // serilzed token
   $tokenObject = $tokenStuff[0]->token;
+  // id
+  $tokenID = $tokenStuff[0]->id;
 
   // unserlized token
   $unserializedIsToken = unserialize($tokenObject);
@@ -29,18 +32,36 @@ function retrieve_token(){
 }
 
 // check expiration
-function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft){
-  // get current time, subtract 1 hour
-  $needsNewToken = time() - 60 * 60 * 1000 ;
+function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft, $tokenID){
+  global $wpdb;
+
+  // grab the db prefix, add the table name
+  $table_name = $wpdb->prefix . "isAjaxForm";
+
+  // get current time, subtract 10 minutes
+  $needsNewToken = time() - 600 ;
 
   // if we need a new token, refresh it
   if($needsNewToken > $tokenExpiration){
     echo 'you need a new friggin token <br />';
     // refresh it
-    //$infusionsoft->setToken($unserializedIsToken->accessToken);
-    //var_dump($infusionsoft);
-    $infusionsoft->refreshAccessToken();
+    $newISToken = $infusionsoft->refreshAccessToken();
+
+    // get end of life
+    $newEndOfLife = $newISToken->endOfLife;
+
+    // serialize object for db storage
+    $newSerialToken = serialize($newISToken);
+
     // update the db
+    $wpdb->update(
+  		$table_name,
+  		array(
+  			'token' => $serialToken,
+        'expiration' => $newEndOfLife
+  		),
+      "WHERE id = $tokenID"
+  	);
 
     // return true
     return true;
@@ -53,7 +74,7 @@ function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusio
 function get_those_ids(){
   global $infusionsoft;
   global $formIDS;
-  
+
   // get the form IDS
   $formIDS = $infusionsoft->webForms()->getMap();
 }
