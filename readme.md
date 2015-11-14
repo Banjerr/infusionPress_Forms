@@ -11,18 +11,18 @@ No more of this "Log in to Infusionsoft, find the campaign that contains the web
 Super EASY! Simply install the plugin, go to the settings page and authenticate your Infusionsoft app. Adding a form is as easy as picking your form from a dropdown, customizing your "thank you", and copying/psting the InfusionPress shortcode wherever you want it.
 
 ### Activating The Plugin And Authorizing Your IS App
-![Activation](activate.gif)
+![Activation](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/activate.gif)
 
 ### Creating Your First InfusionPress Post
-![Creation](implemenet.gif)
+![Creation](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/implemenet.gif)
 
 ### Using The InfusionPress Shortcode
 This will work in any post/custom post type/page/page-tempate (if you know how to use shortcodes in page templates, ;-) )
-![Implementing](rewarding.gif)
+![Implementing](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/rewarding.gif)
 
 ### End Result
 This Wordpress install has no styling, just a CSS normalize. BUT check out how nice the "Thank You" popup looks. And it's RESPONSIVE!
-![Rewarding](using.gif)
+![Rewarding](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/using.gif)
 
 # Support
 If you need any help, please feel free to send me an e-mail <a href="mailto:admin@countryfriedcoders.me">admin@countryfriedcoders.me</a> or you open an <a href="https://github.com/Banjerr/infusionPress_Forms/issues">Issue</a> on GitHub
