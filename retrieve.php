@@ -11,7 +11,7 @@ function retrieve_token(){
   global $wpdb;
 
   // grab the db prefix, add the table name
-  $table_name = $wpdb->prefix . "isAjaxForm";
+  $table_name = $wpdb->prefix . "infusionPress";
 
   // sql statement
   $sql="SELECT expiration, token, id FROM `$table_name`";
@@ -34,9 +34,12 @@ function retrieve_token(){
 // check expiration
 function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusionsoft, $tokenID){
   global $wpdb;
+  global $table_name;
+  global $unserializedIsToken;
+  global $infusionsoft;
 
   // grab the db prefix, add the table name
-  $table_name = $wpdb->prefix . "isAjaxForm";
+  $table_name = $wpdb->prefix . "infusionPress";
 
   // get current time, subtract 10 minutes
   $needsNewToken = time() - 600 ;
@@ -44,6 +47,7 @@ function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusio
   // if we need a new token, refresh it
   if($needsNewToken > $tokenExpiration){
     echo 'you need a new friggin token <br />';
+
     // refresh it
     $newISToken = $infusionsoft->refreshAccessToken();
 
@@ -54,14 +58,14 @@ function check_token_expiration($tokenExpiration, $unserializedIsToken, $infusio
     $newSerialToken = serialize($newISToken);
 
     // update the db
-    $wpdb->update(
-  		$table_name,
-  		array(
-  			'token' => $serialToken,
-        'expiration' => $newEndOfLife
-  		),
-      "WHERE id = $tokenID"
-  	);
+    $wpdb->query( $wpdb->prepare("
+  		UPDATE $table_name
+  		SET token = %s,
+  		    expiration = %s
+      WHERE id = 1;
+      ",
+      $newSerialToken, $newEndOfLife
+  	));
 
     // return true
     return true;

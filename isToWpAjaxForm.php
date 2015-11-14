@@ -33,7 +33,7 @@ require_once(  plugin_dir_path( __FILE__ ) . 'secretStuff.php');
 global $oauth_db_version;
 $oauth_db_version = '1.0';
 
-// create the database
+// create the table in da database
 function create_oauth_table () {
   global $wpdb;
   global $oauth_db_version;
@@ -41,7 +41,7 @@ function create_oauth_table () {
   // set the charset collate
   $charset_collate = $wpdb->get_charset_collate();
   // grab the db prefix, add the table name
-  $table_name = $wpdb->prefix . "isAjaxForm";
+  $table_name = $wpdb->prefix . "infusionPress";
   // make that table
   $sql = "CREATE TABLE $table_name (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -54,6 +54,27 @@ function create_oauth_table () {
   dbDelta( $sql );
 
   add_option( 'oauth_db_version', $ouath_db_version );
+}
+
+// add initial data to set everything up right
+function add_dummyData(){
+  global $wpdb;
+
+  // dummy data
+  $serialToken = '0';
+  $endOfLife = '1';
+
+  // table name, with prefix
+  $table_name = $wpdb->prefix . 'infusionPress';
+
+  // put some initial data in there
+  $wpdb->insert(
+  	$table_name,
+  	array(
+  		'token' => $serialToken,
+      'expiration' => $endOfLife
+  	)
+  );
 }
 
 // initialize and add everything
@@ -173,7 +194,20 @@ function infusionsoft_forms_html( $post) {
 
 			wp_editor( html_entity_decode($content), $editor_id, $settings );
 			?>
-  		<!-- <textarea name="infusionsoft_forms_form_html" id="infusionsoft_forms_form_html" ><?php echo infusionsoft_forms_get_meta( 'infusionsoft_forms_form_html' ); ?></textarea> -->
+  	</p>
+    <p>
+  		<label for="infusionsoft_forms_thanks_message"><?php _e( 'Thank You Message', 'infusionsoft_forms' ); ?></label><br>
+      <?php
+			$content = infusionsoft_forms_get_meta( 'infusionsoft_forms_thanks_message' );
+			$editor_id = 'infusionsoft_forms_thanks_message';
+			$settings = array(
+				'teeny' => false,
+				'media_buttons' => true,
+				'tinymce' => true,
+			);
+
+			wp_editor( html_entity_decode($content), $editor_id, $settings );
+			?>
   	</p>
     <p>
       <label for="infusionpress_shortcode"><?php _e( 'Infusionpress Shortcode', 'infusionsoft_forms' ); ?></label>
@@ -192,6 +226,8 @@ function infusionsoft_forms_save( $post_id ) {
 		update_post_meta( $post_id, 'infusionsoft_forms_which_form_would_you_like_to_use_', esc_attr( $_POST['infusionsoft_forms_which_form_would_you_like_to_use_'] ) );
 	if ( isset( $_POST['infusionsoft_forms_form_html'] ) )
 		update_post_meta( $post_id, 'infusionsoft_forms_form_html',  $_POST['infusionsoft_forms_form_html'] ) ;
+  if ( isset( $_POST['infusionsoft_forms_thanks_message'] ) )
+		update_post_meta( $post_id, 'infusionsoft_forms_thanks_message',  $_POST['infusionsoft_forms_thanks_message'] ) ;
 }
 
 // settings page
@@ -276,23 +312,23 @@ function grab_form_html_callback() {
 
 // shortcode for IS form
 function infusionpress_shortcode($atts){
-   $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm-->';
+   $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm--><div class="infusionPressTY" style="display:none;"><div class="tyHolder"><span class="closeBtn"><p></p></span>'.get_post_meta($atts['id'], 'infusionsoft_forms_thanks_message', true).'</div><!--.tyHolder--></div><!--.infusionPressTY-->';
    return $formCode;
 }
 
 // enqueue the JS/styles on the frontside
 function infusionpress_scripts() {
-	//wp_enqueue_style( 'style-name', get_stylesheet_uri() );
-  wp_enqueue_script( 'jQuery', 'https://code.jquery.com/jquery-2.1.4.min.js', array(), '2.1.4', true);
-	wp_enqueue_script( 'inf-press-functions', plugin_dir_url( __FILE__ ) . '/js/functions.js', array( 'jQuery' ), '1.0.0', true );
-
+  wp_enqueue_script( 'jquery' );
+  wp_enqueue_script( 'jQuery-validate', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/jquery.validate.min.js', array( 'jquery' ), '1.14.0', true);
+  wp_enqueue_script( 'validate-additional-methods', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/additional-methods.min.js', array( 'jquery' ), '1.14.0', true);
+  wp_enqueue_script( 'jquery-ui-datepicker' );
+  wp_enqueue_script( 'inf-press-functions', plugin_dir_url( __FILE__ ) . 'js/infPressFunctions.js', array( 'jquery' ), '1.0.0', true );
   // Localize the script with new data
   $wpBaseURL = plugin_dir_url( __FILE__ );
   wp_localize_script( 'inf-press-functions', 'wpBaseURL', $wpBaseURL );
-
-  wp_enqueue_script( 'jQuery-validate', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/jquery.validate.min.js', array( 'jQuery' ), '1.14.0', true);
-  wp_enqueue_script( 'validate-additional-methods', 'http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/additional-methods.min.js', array( 'jQuery' ), '1.14.0', true);
+  wp_enqueue_style( 'infusionPressForms', plugin_dir_url(__FILE__) . 'style/style.css', array(), '1.0.0', 'all'  );
 }
 
 // call the db functions
 register_activation_hook( __FILE__, 'create_oauth_table' );
+register_activation_hook( __FILE__, 'add_dummyData');

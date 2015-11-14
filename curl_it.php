@@ -31,6 +31,7 @@ if($_POST){
 
   // run the cURL
   $curlResponse = curl_exec($ch);
+  echo json_encode($curlResponse);
 
   // close connection
   curl_close( $ch );

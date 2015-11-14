@@ -20,15 +20,17 @@ function oauth_install_data() {
   $serialToken = serialize($isToken);
 
   // table name, with prefix
-	$table_name = $wpdb->prefix . 'isAjaxForm';
+	$table_name = $wpdb->prefix . 'infusionPress';
 
-	$wpdb->insert(
-		$table_name,
-		array(
-			'token' => $serialToken,
-      'expiration' => $endOfLife
-		)
-	);
+  // update the db
+  $wpdb->query( $wpdb->prepare("
+    UPDATE $table_name
+    SET token = %s,
+        expiration = %s
+    WHERE id = 1;
+    ",
+    $serialToken, $endOfLife
+  ));
 }
 
 // write the oauth token object and endOfLife to db
