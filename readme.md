@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/Banjerr/infusionPress_Forms.svg?branch=master)](https://travis-ci.org/Banjerr/infusionPress_Forms)
 
 # InfusionPress Forms
+![Logo](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/infusionPressLogo.png)
 
 Because sometimes you just need a simple way to add an IS form, with sweet validation, AJAX submission, and custom "Thank You" popups with each form.
 
