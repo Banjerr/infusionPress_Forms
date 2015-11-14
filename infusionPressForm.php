@@ -165,6 +165,33 @@ function infusionsoft_forms_html( $post) {
     get_those_ids();
     global $formIDS;
     ?>
+    <script>
+      jQuery(document).ready(function(){
+        // get the value of the input and change the preview color
+        var newBgColor = jQuery('#bgColor-picker').val();
+        var newFontColor = jQuery('#fontColor-picker').val();
+        jQuery('.colorPickers').on('click', '#bgColor-picker',function(){
+          var newBgColor = jQuery(this).val();
+        });
+        jQuery('.colorPickers').on('click', '#fontColor-picker',function(){
+          var newFontColor = jQuery(this).val();
+        });
+
+        // start up the color picker on the elements
+        jQuery('#bgColor-picker').iris({
+          change: function(event, ui){
+            // change the preview color
+            jQuery('.bgColor-pickerPreview').css( 'background-color', ui.color.toString());
+          }
+        });
+        jQuery('#fontColor-picker').iris({
+          change: function(event, ui){
+            // change the preview color
+            jQuery('.fontColor-pickerPreview').css( 'background-color', ui.color.toString());
+          }
+        });
+      });
+    </script>
   	<p>
   		<label for="infusionsoft_forms_which_form_would_you_like_to_use_"><?php _e( 'Which form would you like to use?', 'infusionsoft_forms' ); ?></label><br>
   		<select name="infusionsoft_forms_which_form_would_you_like_to_use_" id="infusionsoft_forms_which_form_would_you_like_to_use_">
@@ -195,6 +222,16 @@ function infusionsoft_forms_html( $post) {
 			wp_editor( html_entity_decode($content), $editor_id, $settings );
 			?>
   	</p>
+    <p>
+      <div class="colorPickers">
+        <label for="infusionsoft_forms_thanks_bgColor"><?php _e( 'Thank You Message BG Color (default is black)', 'infusionsoft_forms' ); ?></label><br>
+        <input type="text" id="bgColor-picker" value="<?php echo infusionsoft_forms_get_meta('infusionsoft_forms_thanks_bgColor'); ?>" name="infusionsoft_forms_thanks_bgColor"><br>
+        <div class="bgColor-pickerPreview" style="display:inline-block; margin: 2% 0; 2%;width:30px;height:30px;background-color:<?php echo infusionsoft_forms_get_meta('infusionsoft_forms_thanks_bgColor'); ?>"></div><br>
+        <label for="infusionsoft_forms_thanks_fontColor"><?php _e( 'Thank You Message Font Color (default is white)', 'infusionsoft_forms' ); ?></label><br>
+        <input type="text" id="fontColor-picker" value="<?php echo infusionsoft_forms_get_meta('infusionsoft_forms_thanks_fontColor'); ?>" name="infusionsoft_forms_thanks_fontColor"><br>
+        <div class="fontColor-pickerPreview" style="display:inline-block; margin: 2% 0; 2%;width:30px;height:30px;background-color:<?php echo infusionsoft_forms_get_meta('infusionsoft_forms_thanks_fontColor'); ?>"></div>
+      </div><!--.colorPickers-->
+    </p>
     <p>
   		<label for="infusionsoft_forms_thanks_message"><?php _e( 'Thank You Message', 'infusionsoft_forms' ); ?></label><br>
       <?php
@@ -228,6 +265,10 @@ function infusionsoft_forms_save( $post_id ) {
 		update_post_meta( $post_id, 'infusionsoft_forms_form_html',  $_POST['infusionsoft_forms_form_html'] ) ;
   if ( isset( $_POST['infusionsoft_forms_thanks_message'] ) )
 		update_post_meta( $post_id, 'infusionsoft_forms_thanks_message',  $_POST['infusionsoft_forms_thanks_message'] ) ;
+  if ( isset( $_POST['infusionsoft_forms_thanks_bgColor'] ) )
+    update_post_meta( $post_id, 'infusionsoft_forms_thanks_bgColor', esc_attr( $_POST['infusionsoft_forms_thanks_bgColor'] ) );
+  if ( isset( $_POST['infusionsoft_forms_thanks_fontColor'] ) )
+    update_post_meta( $post_id, 'infusionsoft_forms_thanks_fontColor', esc_attr( $_POST['infusionsoft_forms_thanks_fontColor'] ) );
 }
 
 // settings page
@@ -312,7 +353,7 @@ function grab_form_html_callback() {
 
 // shortcode for IS form
 function infusionpress_shortcode($atts){
-   $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm--><div class="infusionPressTY" style="display:none;"><div class="tyHolder"><span class="closeBtn"><p></p></span>'.get_post_meta($atts['id'], 'infusionsoft_forms_thanks_message', true).'</div><!--.tyHolder--></div><!--.infusionPressTY-->';
+   $formCode = '<div class="infusionPressForm">'.get_post_meta($atts['id'], 'infusionsoft_forms_form_html', true).'</div><!--.infusionPressForm--><div class="infusionPressTY" style="display:none; background-color:'.get_post_meta($atts['id'], 'infusionsoft_forms_thanks_bgColor', true).';"><div class="tyHolder" style="color: '.get_post_meta($atts['id'], 'infusionsoft_forms_thanks_fontColor', true).';"><span class="closeBtn"><p></p></span>'.get_post_meta($atts['id'], 'infusionsoft_forms_thanks_message', true).'</div><!--.tyHolder--></div><!--.infusionPressTY-->';
    return $formCode;
 }
 
@@ -328,6 +369,12 @@ function infusionpress_scripts() {
   wp_localize_script( 'inf-press-functions', 'wpBaseURL', $wpBaseURL );
   wp_enqueue_style( 'infusionPressForms', plugin_dir_url(__FILE__) . 'style/style.css', array(), '1.0.0', 'all'  );
 }
+
+// wp iris color picker stuff
+function infusionPressColorPicker(){
+    wp_enqueue_script( 'iris' );
+}
+add_action('admin_enqueue_scripts','infusionPressColorPicker');
 
 // call the db functions
 register_activation_hook( __FILE__, 'create_oauth_table' );
