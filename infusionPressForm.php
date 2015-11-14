@@ -248,11 +248,11 @@ function isForms_settings_page(){
     retrieve_token();
     global $newToken;
 
-    //if ($newToken) {
+    if ($newToken) {
         echo '<p>You are authenticated. Get to work!</p>';
-    //} else {
+    } else {
         echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
-    //} // end oAuth IS STUFF
+    } // end oAuth IS STUFF
     ?>
     </div>
   <?php
