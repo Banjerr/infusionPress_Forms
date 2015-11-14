@@ -2,7 +2,7 @@
   "name": "InfusionPress Forms",
   "version": "1.0.0",
   "description": "Simple plugin to add IS forms easily",
-  "main": "isToWpAjaxForm.php",
+  "main": "infusionPressForm.php",
   "author": "Ben Redden",
   "repository": {
   "type": "git",
