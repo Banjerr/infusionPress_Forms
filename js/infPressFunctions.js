@@ -69,7 +69,7 @@ jQuery(function () {
             data: formInfo + '&formAction=' + formAction, // get all form variables and field names as JSON object
             success: function(result){
               if(result === 'false'){
-                jQuery('.infusionPressForm').prepend('<div class="errorMessage" style="text-align:center;"><span class="closeBtn"></span><h2>Whoops! Something went awry! Please try again</h2></div><!--.errorMessage-->')
+                jQuery('.infusionPressForm').prepend('<div class="errorMessage" style="text-align:center;"><span class="closeBtn"><p></p></span><h2>Whoops! Something went awry! Please try again</h2></div><!--.errorMessage-->')
               } else {
                 jQuery('.infusionPressTY').slideDown(1000);
                 function clearForm(form) {

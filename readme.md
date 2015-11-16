@@ -19,11 +19,11 @@ Super EASY! Simply install the plugin, go to the settings page and authenticate 
 
 ### Using The InfusionPress Shortcode
 This will work in any post/custom post type/page/page-tempate (if you know how to use shortcodes in page templates, ;-) )
-![Implementing](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/rewarding.gif)
+![Implementing](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/using.gif)
 
 ### End Result
 This Wordpress install has no styling, just a CSS normalize. BUT check out how nice the "Thank You" popup looks. And it's RESPONSIVE!
-![Rewarding](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/using.gif)
+![Rewarding](https://github.com/Banjerr/infusionPress_Forms/blob/master/images/rewarding.gif)
 
 # Support
 If you need any help, please feel free to send me an e-mail <a href="mailto:admin@countryfriedcoders.me">admin@countryfriedcoders.me</a> or you open an <a href="https://github.com/Banjerr/infusionPress_Forms/issues">Issue</a> on GitHub
